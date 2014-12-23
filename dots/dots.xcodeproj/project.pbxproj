@@ -43,18 +43,19 @@
 		8486AB301A4A071D00A5E506 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8486AB321A4A071D00A5E506 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		8486AB341A4A071D00A5E506 /* dots-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "dots-Prefix.pch"; sourceTree = "<group>"; };
-		8486AB351A4A071E00A5E506 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		8486AB361A4A071E00A5E506 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		8486AB351A4A071E00A5E506 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = dots/AppDelegate.h; sourceTree = "<group>"; };
+		8486AB361A4A071E00A5E506 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = dots/AppDelegate.m; sourceTree = "<group>"; };
 		8486AB391A4A071E00A5E506 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main_iPhone.storyboard; sourceTree = "<group>"; };
 		8486AB3C1A4A071E00A5E506 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main_iPad.storyboard; sourceTree = "<group>"; };
-		8486AB3E1A4A071E00A5E506 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		8486AB3F1A4A071E00A5E506 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
-		8486AB411A4A071E00A5E506 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		8486AB3E1A4A071E00A5E506 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ViewController.h; path = dots/ViewController.h; sourceTree = "<group>"; };
+		8486AB3F1A4A071E00A5E506 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ViewController.m; path = dots/ViewController.m; sourceTree = "<group>"; };
+		8486AB411A4A071E00A5E506 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = dots/Images.xcassets; sourceTree = "<group>"; };
 		8486AB471A4A071E00A5E506 /* dotsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = dotsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8486AB481A4A071E00A5E506 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		8486AB501A4A071E00A5E506 /* dotsTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "dotsTests-Info.plist"; sourceTree = "<group>"; };
 		8486AB521A4A071E00A5E506 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8486AB541A4A071E00A5E506 /* dotsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = dotsTests.m; sourceTree = "<group>"; };
+		8486AB621A4A1A3000A5E506 /* Globals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Globals.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +85,10 @@
 		8486AB1A1A4A071D00A5E506 = {
 			isa = PBXGroup;
 			children = (
+				8486AB611A4A17DF00A5E506 /* viewController */,
+				8486AB601A4A17C200A5E506 /* others */,
+				8486AB5F1A4A17B700A5E506 /* model */,
+				8486AB5E1A4A17A600A5E506 /* resourses */,
 				8486AB2C1A4A071D00A5E506 /* dots */,
 				8486AB4E1A4A071E00A5E506 /* dotsTests */,
 				8486AB251A4A071D00A5E506 /* Frameworks */,
@@ -114,14 +119,6 @@
 		8486AB2C1A4A071D00A5E506 /* dots */ = {
 			isa = PBXGroup;
 			children = (
-				8486AB351A4A071E00A5E506 /* AppDelegate.h */,
-				8486AB361A4A071E00A5E506 /* AppDelegate.m */,
-				8486AB381A4A071E00A5E506 /* Main_iPhone.storyboard */,
-				8486AB3B1A4A071E00A5E506 /* Main_iPad.storyboard */,
-				8486AB3E1A4A071E00A5E506 /* ViewController.h */,
-				8486AB3F1A4A071E00A5E506 /* ViewController.m */,
-				8486AB411A4A071E00A5E506 /* Images.xcassets */,
-				8486AB2D1A4A071D00A5E506 /* Supporting Files */,
 			);
 			path = dots;
 			sourceTree = "<group>";
@@ -135,6 +132,7 @@
 				8486AB341A4A071D00A5E506 /* dots-Prefix.pch */,
 			);
 			name = "Supporting Files";
+			path = dots;
 			sourceTree = "<group>";
 		};
 		8486AB4E1A4A071E00A5E506 /* dotsTests */ = {
@@ -153,6 +151,43 @@
 				8486AB511A4A071E00A5E506 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		8486AB5E1A4A17A600A5E506 /* resourses */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = resourses;
+			sourceTree = "<group>";
+		};
+		8486AB5F1A4A17B700A5E506 /* model */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = model;
+			sourceTree = "<group>";
+		};
+		8486AB601A4A17C200A5E506 /* others */ = {
+			isa = PBXGroup;
+			children = (
+				8486AB411A4A071E00A5E506 /* Images.xcassets */,
+				8486AB2D1A4A071D00A5E506 /* Supporting Files */,
+				8486AB381A4A071E00A5E506 /* Main_iPhone.storyboard */,
+				8486AB3B1A4A071E00A5E506 /* Main_iPad.storyboard */,
+				8486AB351A4A071E00A5E506 /* AppDelegate.h */,
+				8486AB361A4A071E00A5E506 /* AppDelegate.m */,
+				8486AB621A4A1A3000A5E506 /* Globals.h */,
+			);
+			name = others;
+			sourceTree = "<group>";
+		};
+		8486AB611A4A17DF00A5E506 /* viewController */ = {
+			isa = PBXGroup;
+			children = (
+				8486AB3E1A4A071E00A5E506 /* ViewController.h */,
+				8486AB3F1A4A071E00A5E506 /* ViewController.m */,
+			);
+			name = viewController;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -292,6 +327,7 @@
 				8486AB391A4A071E00A5E506 /* Base */,
 			);
 			name = Main_iPhone.storyboard;
+			path = dots;
 			sourceTree = "<group>";
 		};
 		8486AB3B1A4A071E00A5E506 /* Main_iPad.storyboard */ = {
@@ -300,6 +336,7 @@
 				8486AB3C1A4A071E00A5E506 /* Base */,
 			);
 			name = Main_iPad.storyboard;
+			path = dots;
 			sourceTree = "<group>";
 		};
 		8486AB511A4A071E00A5E506 /* InfoPlist.strings */ = {
@@ -472,6 +509,7 @@
 				8486AB5A1A4A071E00A5E506 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		8486AB5B1A4A071E00A5E506 /* Build configuration list for PBXNativeTarget "dotsTests" */ = {
 			isa = XCConfigurationList;
@@ -480,6 +518,7 @@
 				8486AB5D1A4A071E00A5E506 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
