@@ -7,7 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "IntegerPoint.h"
 
 @interface ViewController : UIViewController
+
+- (IntegerPoint *)getRandomPoint;
 
 @end

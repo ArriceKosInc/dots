@@ -22,6 +22,7 @@
 		8486AB4B1A4A071E00A5E506 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8486AB2A1A4A071D00A5E506 /* UIKit.framework */; };
 		8486AB531A4A071E00A5E506 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8486AB511A4A071E00A5E506 /* InfoPlist.strings */; };
 		8486AB551A4A071E00A5E506 /* dotsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8486AB541A4A071E00A5E506 /* dotsTests.m */; };
+		8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,8 @@
 		8486AB521A4A071E00A5E506 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8486AB541A4A071E00A5E506 /* dotsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = dotsTests.m; sourceTree = "<group>"; };
 		8486AB621A4A1A3000A5E506 /* Globals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Globals.h; sourceTree = "<group>"; };
+		8B18EB1A1A4A2D06002D274D /* IntegerPoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntegerPoint.h; sourceTree = "<group>"; };
+		8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IntegerPoint.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +166,9 @@
 		8486AB5F1A4A17B700A5E506 /* model */ = {
 			isa = PBXGroup;
 			children = (
+				8B18EB1A1A4A2D06002D274D /* IntegerPoint.h */,
+				8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */,
+				8486AB621A4A1A3000A5E506 /* Globals.h */,
 			);
 			name = model;
 			sourceTree = "<group>";
@@ -176,7 +182,6 @@
 				8486AB3B1A4A071E00A5E506 /* Main_iPad.storyboard */,
 				8486AB351A4A071E00A5E506 /* AppDelegate.h */,
 				8486AB361A4A071E00A5E506 /* AppDelegate.m */,
-				8486AB621A4A1A3000A5E506 /* Globals.h */,
 			);
 			name = others;
 			sourceTree = "<group>";
@@ -289,6 +294,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8486AB401A4A071E00A5E506 /* ViewController.m in Sources */,
+				8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */,
 				8486AB371A4A071E00A5E506 /* AppDelegate.m in Sources */,
 				8486AB331A4A071D00A5E506 /* main.m in Sources */,
 			);

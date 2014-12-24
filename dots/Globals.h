@@ -1,1 +1,3 @@
 #define FIELD_SIZE 10
+#define TICK 1
+#define STARTING_DOTS_COUNT 10
