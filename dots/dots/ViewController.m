@@ -15,7 +15,7 @@
 @implementation ViewController
 NSMutableArray *buttons;
 NSMutableArray *allDots;
-NSMutableArray *checkedDots;
+NSMutableArray *dotsFromCurrentChain;
 NSTimer *timer1;
 
 - (void)viewDidLoad
@@ -28,7 +28,7 @@ NSTimer *timer1;
                                     repeats:YES];
     buttons = [NSMutableArray new];
     allDots = [NSMutableArray new];
-    checkedDots = [NSMutableArray new];
+    dotsFromCurrentChain = [NSMutableArray new];
     
     int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
     
@@ -91,6 +91,13 @@ NSTimer *timer1;
     [buttons[ip.x + ip.y * FIELD_SIZE] setTitle:@"x" forState:UIControlStateNormal];
 }
 
+//fixed:
+//teper' dobavlyaetsia vsegda korrektnaia tochka
+//bug s nevozmojnostiu udalit' edinstvennuiu tochku
+
+//TODO: posle povorota peresechenie s uje vkliuchennoi tochkoi - proverit', no vrode rabotaet
+//novaya tochka ne mojet spawnitsia na liniiu!
+
 -(void)pressBtn: (id)sender
 {
     int positionOfSender = -1;
@@ -114,31 +121,52 @@ NSTimer *timer1;
         return;
     }
     
-    if ([checkedDots count] != 0) {
-        IntegerPoint *lastPointInList = [checkedDots objectAtIndex:[checkedDots count] - 1];
+    if ([dotsFromCurrentChain count] != 0) {
+        IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
         IntegerPoint *prelastPointInList = nil;
-        if ([checkedDots count] > 1) {
-            prelastPointInList = [checkedDots objectAtIndex:[checkedDots count] - 2];
+        if ([dotsFromCurrentChain count] > 1) {
+            prelastPointInList = [dotsFromCurrentChain objectAtIndex:[dotsFromCurrentChain count] - 2];
         }
         if (lastPointInList.x == clickedPoint.x && lastPointInList.y == clickedPoint.y) {
             [buttons[lastPointInList.x + lastPointInList.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-            [checkedDots removeLastObject];
+            [dotsFromCurrentChain removeLastObject];
+            return;
         }
         // if same x
         if (lastPointInList.x == clickedPoint.x) {
             if (prelastPointInList == nil) {
                 int startCoord = (lastPointInList.y < clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
                 int endCoord = (lastPointInList.y > clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
+                IntegerPoint *pointMostCloseToLast = nil;
                 for (int i = 0; i < [allDots count]; i++) {
                     IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                     if (dotToCheck.x == lastPointInList.x && dotToCheck.y < endCoord && dotToCheck.y > startCoord) {
+                        if (pointMostCloseToLast) {
+                            if (abs(dotToCheck.y - lastPointInList.y) < abs(pointMostCloseToLast.y - lastPointInList.y)) {
+                                pointMostCloseToLast = dotToCheck;
+                            }
+                        } else {
+                            pointMostCloseToLast = dotToCheck;
+                        }
                         NSLog(@"Im here");
-                        clickedPoint = dotToCheck;
-                        positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                        BOOL isAlreadyInList = NO;
+                        for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                            IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                            if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                isAlreadyInList = YES;
+                                break;
+                            }
+                        }
+                        if (isAlreadyInList) {
+                            NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                            return;
+                        }
+                        clickedPoint = pointMostCloseToLast;
+                        positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                     }
                 }
-                [checkedDots addObject:clickedPoint];
-                NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                [dotsFromCurrentChain addObject:clickedPoint];
+                NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                 [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
             } else {
                 if (lastPointInList.x == prelastPointInList.x) {
@@ -147,36 +175,76 @@ NSTimer *timer1;
                         
                         int startCoord = (lastPointInList.y < clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
                         int endCoord = (lastPointInList.y > clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
+                        IntegerPoint *pointMostCloseToLast = nil;
                         for (int i = 0; i < [allDots count]; i++) {
                             IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                             if (dotToCheck.x == lastPointInList.x && dotToCheck.y < endCoord && dotToCheck.y > startCoord) {
+                                if (pointMostCloseToLast) {
+                                    if (abs(dotToCheck.y - lastPointInList.y) < abs(pointMostCloseToLast.y - lastPointInList.y)) {
+                                        pointMostCloseToLast = dotToCheck;
+                                    }
+                                } else {
+                                    pointMostCloseToLast = dotToCheck;
+                                }
                                 NSLog(@"Im here");
-                                clickedPoint = dotToCheck;
-                                positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                                BOOL isAlreadyInList = NO;
+                                for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                                    IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                                    if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                        isAlreadyInList = YES;
+                                        break;
+                                    }
+                                }
+                                if (isAlreadyInList) {
+                                    NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                                    return;
+                                }
+                                clickedPoint = pointMostCloseToLast;
+                                positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                             }
                         }
-                        [checkedDots addObject:clickedPoint];
-                        NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                        [dotsFromCurrentChain addObject:clickedPoint];
+                        NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                         [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
                     } else {
                         [buttons[lastPointInList.x + lastPointInList.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-                        [checkedDots removeLastObject];
+                        [dotsFromCurrentChain removeLastObject];
                     }
                 }
                 if (lastPointInList.y == prelastPointInList.y) {
                     
                     int startCoord = (lastPointInList.y < clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
                     int endCoord = (lastPointInList.y > clickedPoint.y) ? lastPointInList.y : clickedPoint.y;
+                    IntegerPoint *pointMostCloseToLast = nil;
                     for (int i = 0; i < [allDots count]; i++) {
                         IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                         if (dotToCheck.x == lastPointInList.x && dotToCheck.y < endCoord && dotToCheck.y > startCoord) {
+                            if (pointMostCloseToLast) {
+                                if (abs(dotToCheck.y - lastPointInList.y) < abs(pointMostCloseToLast.y - lastPointInList.y)) {
+                                    pointMostCloseToLast = dotToCheck;
+                                }
+                            } else {
+                                pointMostCloseToLast = dotToCheck;
+                            }
                             NSLog(@"Im here");
-                            clickedPoint = dotToCheck;
-                            positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                            BOOL isAlreadyInList = NO;
+                            for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                                IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                                if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                    isAlreadyInList = YES;
+                                    break;
+                                }
+                            }
+                            if (isAlreadyInList) {
+                                NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                                return;
+                            }
+                            clickedPoint = pointMostCloseToLast;
+                            positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                         }
                     }
-                    [checkedDots addObject:clickedPoint];
-                    NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                    [dotsFromCurrentChain addObject:clickedPoint];
+                    NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                     [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
                 }
             }
@@ -190,16 +258,36 @@ NSTimer *timer1;
                 
                 int startCoord = (lastPointInList.x < clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
                 int endCoord = (lastPointInList.x > clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
+                IntegerPoint *pointMostCloseToLast = nil;
                 for (int i = 0; i < [allDots count]; i++) {
                     IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                     if (dotToCheck.y == lastPointInList.y && dotToCheck.x < endCoord && dotToCheck.x > startCoord) {
+                        if (pointMostCloseToLast) {
+                            if (abs(dotToCheck.x - lastPointInList.x) < abs(pointMostCloseToLast.x - lastPointInList.x)) {
+                                pointMostCloseToLast = dotToCheck;
+                            }
+                        } else {
+                            pointMostCloseToLast = dotToCheck;
+                        }
                         NSLog(@"Im here");
-                        clickedPoint = dotToCheck;
-                        positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                        BOOL isAlreadyInList = NO;
+                        for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                            IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                            if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                isAlreadyInList = YES;
+                                break;
+                            }
+                        }
+                        if (isAlreadyInList) {
+                            NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                            return;
+                        }
+                        clickedPoint = pointMostCloseToLast;
+                        positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                     }
                 }
-                [checkedDots addObject:clickedPoint];
-                NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                [dotsFromCurrentChain addObject:clickedPoint];
+                NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                 [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
             } else {
                 if (lastPointInList.y == prelastPointInList.y) {
@@ -208,36 +296,76 @@ NSTimer *timer1;
                         
                         int startCoord = (lastPointInList.x < clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
                         int endCoord = (lastPointInList.x > clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
+                        IntegerPoint *pointMostCloseToLast = nil;
                         for (int i = 0; i < [allDots count]; i++) {
                             IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                             if (dotToCheck.y == lastPointInList.y && dotToCheck.x < endCoord && dotToCheck.x > startCoord) {
+                                if (pointMostCloseToLast) {
+                                    if (abs(dotToCheck.x - lastPointInList.x) < abs(pointMostCloseToLast.x - lastPointInList.x)) {
+                                        pointMostCloseToLast = dotToCheck;
+                                    }
+                                } else {
+                                    pointMostCloseToLast = dotToCheck;
+                                }
                                 NSLog(@"Im here");
-                                clickedPoint = dotToCheck;
-                                positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                                BOOL isAlreadyInList = NO;
+                                for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                                    IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                                    if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                        isAlreadyInList = YES;
+                                        break;
+                                    }
+                                }
+                                if (isAlreadyInList) {
+                                    NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                                    return;
+                                }
+                                clickedPoint = pointMostCloseToLast;
+                                positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                             }
                         }
-                        [checkedDots addObject:clickedPoint];
-                        NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                        [dotsFromCurrentChain addObject:clickedPoint];
+                        NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                         [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
                     } else {
                         [buttons[lastPointInList.x + lastPointInList.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-                        [checkedDots removeLastObject];
+                        [dotsFromCurrentChain removeLastObject];
                     }
                 }
                 if (lastPointInList.x == prelastPointInList.x) {
                     
                     int startCoord = (lastPointInList.x < clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
                     int endCoord = (lastPointInList.x > clickedPoint.x) ? lastPointInList.x : clickedPoint.x;
+                    IntegerPoint *pointMostCloseToLast = nil;
                     for (int i = 0; i < [allDots count]; i++) {
                         IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
                         if (dotToCheck.y == lastPointInList.y && dotToCheck.x < endCoord && dotToCheck.x > startCoord) {
+                            if (pointMostCloseToLast) {
+                                if (abs(dotToCheck.x - lastPointInList.x) < abs(pointMostCloseToLast.x - lastPointInList.x)) {
+                                    pointMostCloseToLast = dotToCheck;
+                                }
+                            } else {
+                                pointMostCloseToLast = dotToCheck;
+                            }
                             NSLog(@"Im here");
-                            clickedPoint = dotToCheck;
-                            positionOfSender = dotToCheck.x + dotToCheck.y * FIELD_SIZE;
+                            BOOL isAlreadyInList = NO;
+                            for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
+                                IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+                                if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
+                                    isAlreadyInList = YES;
+                                    break;
+                                }
+                            }
+                            if (isAlreadyInList) {
+                                NSLog(@"Cannot add a dot by intersecting a dot already in list");
+                                return;
+                            }
+                            clickedPoint = pointMostCloseToLast;
+                            positionOfSender = clickedPoint.x + clickedPoint.y * FIELD_SIZE;
                         }
                     }
-                    [checkedDots addObject:clickedPoint];
-                    NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+                    [dotsFromCurrentChain addObject:clickedPoint];
+                    NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
                     [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
                 }
 
@@ -245,8 +373,8 @@ NSTimer *timer1;
             
         }
     } else {
-        [checkedDots addObject:clickedPoint];
-        NSLog(@"DOTS CHECKED: %d", [checkedDots count]);
+        [dotsFromCurrentChain addObject:clickedPoint];
+        NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
         [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
     }
    // [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
