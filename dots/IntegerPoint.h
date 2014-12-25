@@ -12,7 +12,8 @@
 @property (nonatomic, readwrite) NSInteger y;
 
 + (IntegerPoint *) integerPointWithX:(NSInteger) x andY:(NSInteger) y;
-
+- (BOOL) isEqualToPoint:(IntegerPoint *) point;
+-(BOOL) makesRayWithPoint1:(IntegerPoint *) point1 andPoint2:(IntegerPoint *) point2;
 
 
 @end

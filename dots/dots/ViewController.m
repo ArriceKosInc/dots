@@ -18,6 +18,7 @@ NSMutableArray *allDots;
 NSMutableArray *dotsFromCurrentChain;
 NSMutableArray *allPointsUsedInCurrentChain;
 NSTimer *timer1;
+long int score;
 
 - (void)viewDidLoad
 {
@@ -31,6 +32,8 @@ NSTimer *timer1;
     allDots = [NSMutableArray new];
     dotsFromCurrentChain = [NSMutableArray new];
     allPointsUsedInCurrentChain = [NSMutableArray new];
+    
+    score = 0;
     
     int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
     
@@ -68,7 +71,7 @@ NSTimer *timer1;
 
 - (IntegerPoint *)getRandomPoint
 {
-    IntegerPoint *point = [IntegerPoint integerPointWithX:random()%FIELD_SIZE andY:random()%FIELD_SIZE];
+    IntegerPoint *point = [IntegerPoint integerPointWithX:random() % FIELD_SIZE andY:random() % FIELD_SIZE];
 
     return point;
 }
@@ -82,10 +85,18 @@ NSTimer *timer1;
         ip =[self getRandomPoint];
         for (int i = 0; i < [allDots count]; i++) {
             IntegerPoint *pointFromArray = [allDots objectAtIndex:i];
-            if (pointFromArray.x == ip.x &&
-                pointFromArray.y == ip.y) {
+            if ([pointFromArray isEqualToPoint:ip]) {
                 match = YES;
                 break;
+            }
+        }
+        if (!match) {
+            for (int i = 0; i < [allPointsUsedInCurrentChain count]; i++) {
+                IntegerPoint *pointFromArray = [allPointsUsedInCurrentChain objectAtIndex:i];
+                if ([pointFromArray isEqualToPoint:ip]) {
+                    match = YES;
+                    break;
+                }
             }
         }
     } while (match);
@@ -93,61 +104,36 @@ NSTimer *timer1;
     [buttons[ip.x + ip.y * FIELD_SIZE] setTitle:@"x" forState:UIControlStateNormal];
 }
 
-//fixed:
-//teper' dobavlyaetsia vsegda korrektnaia tochka
-//bug s nevozmojnostiu udalit' edinstvennuiu tochku
-
-//TODO: posle povorota peresechenie s uje vkliuchennoi tochkoi - proverit', no vrode rabotaet
-//novaya tochka ne mojet spawnitsia na liniiu!
-
 -(void)pressBtn: (id)sender
 {
-    int positionOfSender = -1;
-    for (int i = 0; i < FIELD_SIZE*FIELD_SIZE; i++) {
-        if ([sender isEqual:buttons[i]]) {
-            positionOfSender = i;
-            break;
-        }
-    }
-    IntegerPoint *clickedPoint = [IntegerPoint integerPointWithX:positionOfSender % FIELD_SIZE andY:positionOfSender / FIELD_SIZE];
-    
-    BOOL isDotInClickedButton = NO;
-    for (int i = 0; i < [allDots count]; i++) {
-        IntegerPoint *curPoint = [allDots  objectAtIndex:i];
-        if (clickedPoint.x == curPoint.x && clickedPoint.y == curPoint.y) {
-            isDotInClickedButton = YES;
-        }
-    }
-    if (!isDotInClickedButton) {
+    IntegerPoint *clickedPoint = [self pointByClickedSender:sender];
+    if (![self pointContainsDot:clickedPoint]) {
         NSLog(@"No dot in this point");
         return;
     }
     
     if ([dotsFromCurrentChain count] != 0) {
-        IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
+        IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
         IntegerPoint *prelastPointInList = nil;
         if ([dotsFromCurrentChain count] > 1) {
             prelastPointInList = [dotsFromCurrentChain objectAtIndex:[dotsFromCurrentChain count] - 2];
         }
-        if (lastPointInList.x == clickedPoint.x && lastPointInList.y == clickedPoint.y) {
+        if ([lastPointInChain isEqualToPoint:clickedPoint]) {
             [self removePoint];
             return;
         }
+        IntegerPoint *nextPointToAdd = nil;
         
         // if same x
-        if (lastPointInList.x == clickedPoint.x) {
-            if (prelastPointInList == nil) {
-                IntegerPoint *nextPointToAdd = nil;
-                nextPointToAdd = [self detectNextPointToAddWhenXCoordAreEqual:clickedPoint];
+        if (lastPointInChain.x == clickedPoint.x) {
+            nextPointToAdd = [self detectNextPointToAddWhenXCoordAreEqual:clickedPoint];
+            if (!prelastPointInList) {
                 if (![self addPoint:nextPointToAdd]) {
                     return;
                 }
             } else {
-                if (lastPointInList.x == prelastPointInList.x) {
-                    if (((clickedPoint.y - lastPointInList.y) < 0 && (lastPointInList.y - prelastPointInList.y) < 0) ||
-                        ((clickedPoint.y - lastPointInList.y) > 0 && (lastPointInList.y - prelastPointInList.y) > 0)) {
-                        IntegerPoint *nextPointToAdd = nil;
-                        nextPointToAdd = [self detectNextPointToAddWhenXCoordAreEqual:clickedPoint];
+                if (lastPointInChain.x == prelastPointInList.x) {
+                    if ([clickedPoint makesRayWithPoint1:lastPointInChain andPoint2:prelastPointInList]) {
                         if (![self addPoint:nextPointToAdd]) {
                             return;
                         }
@@ -155,9 +141,7 @@ NSTimer *timer1;
                         [self removePoint];
                     }
                 }
-                if (lastPointInList.y == prelastPointInList.y) {
-                    IntegerPoint *nextPointToAdd = nil;
-                    nextPointToAdd = [self detectNextPointToAddWhenXCoordAreEqual:clickedPoint];
+                if (lastPointInChain.y == prelastPointInList.y) {
                     if (![self addPoint:nextPointToAdd]) {
                         return;
                     }
@@ -166,19 +150,15 @@ NSTimer *timer1;
         }
         
         // if same y
-        if (lastPointInList.y == clickedPoint.y) {
-            if (prelastPointInList == nil) {
-                IntegerPoint *nextPointToAdd = nil;
-                nextPointToAdd = [self detectNextPointToAddWhenYCoordAreEqual:clickedPoint];
+        if (lastPointInChain.y == clickedPoint.y) {
+            nextPointToAdd = [self detectNextPointToAddWhenYCoordAreEqual:clickedPoint];
+            if (!prelastPointInList) {
                 if (![self addPoint:nextPointToAdd]) {
                     return;
                 }
             } else {
-                if (lastPointInList.y == prelastPointInList.y) {
-                    if (((clickedPoint.x - lastPointInList.x) < 0 && (lastPointInList.x - prelastPointInList.x) < 0) ||
-                        ((clickedPoint.x - lastPointInList.x) > 0 && (lastPointInList.x - prelastPointInList.x) > 0)) {
-                        IntegerPoint *nextPointToAdd = nil;
-                        nextPointToAdd = [self detectNextPointToAddWhenYCoordAreEqual:clickedPoint];
+                if (lastPointInChain.y == prelastPointInList.y) {
+                    if ([clickedPoint makesRayWithPoint1:lastPointInChain andPoint2:prelastPointInList]) {
                         if (![self addPoint:nextPointToAdd]) {
                             return;
                         }
@@ -186,9 +166,7 @@ NSTimer *timer1;
                         [self removePoint];
                     }
                 }
-                if (lastPointInList.x == prelastPointInList.x) {
-                    IntegerPoint *nextPointToAdd = nil;
-                    nextPointToAdd = [self detectNextPointToAddWhenYCoordAreEqual:clickedPoint];
+                if (lastPointInChain.x == prelastPointInList.x) {
                     if (![self addPoint:nextPointToAdd]) {
                         return;
                     }
@@ -196,79 +174,138 @@ NSTimer *timer1;
             }
         }
     } else {    //first point
-        [allPointsUsedInCurrentChain addObject:clickedPoint];       //poka ostavili chtobi ne narushat' otchetnosti
         [self addPoint:clickedPoint];
     }
-   // [buttons[positionOfSender] setBackgroundColor:[UIColor greenColor]];
 }
 
 -(void) removePoint
 {
-    IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
-    IntegerPoint *prelastPointInList = nil;
+    IntegerPoint *lastPointInList = nil;
+    if ([dotsFromCurrentChain count] > 0) {
+        lastPointInList = [dotsFromCurrentChain lastObject];
+    }
+    IntegerPoint *prelastPointInChain = nil;
     if ([dotsFromCurrentChain count] > 1) {
-        prelastPointInList = [dotsFromCurrentChain objectAtIndex:[dotsFromCurrentChain count] - 2];
+        prelastPointInChain = [dotsFromCurrentChain objectAtIndex:[dotsFromCurrentChain count] - 2];
     }
     [buttons[lastPointInList.x + lastPointInList.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
     [dotsFromCurrentChain removeLastObject];
-    if ([dotsFromCurrentChain count] != 0) {
-        if (prelastPointInList.x == lastPointInList.x) {
-            int startCoord = (lastPointInList.y < prelastPointInList.y) ? lastPointInList.y : prelastPointInList.y;
-            int endCoord = (lastPointInList.y > prelastPointInList.y) ? lastPointInList.y : prelastPointInList.y;
+    if (prelastPointInChain) {
+        if (prelastPointInChain.x == lastPointInList.x) {
+            int startCoord = (lastPointInList.y < prelastPointInChain.y) ? lastPointInList.y : prelastPointInChain.y;
+            int endCoord = (lastPointInList.y > prelastPointInChain.y) ? lastPointInList.y : prelastPointInChain.y;
+            if (lastPointInList.y > prelastPointInChain.y) {
+                startCoord++;
+            } else {
+                endCoord--;
+            }
             for (int i = startCoord; i <= endCoord; i++) {
                 [allPointsUsedInCurrentChain removeLastObject];
                 IntegerPoint *pointToRemove = [IntegerPoint integerPointWithX:lastPointInList.x andY:i];
-                [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-            }
-        } else
-            if (prelastPointInList.y == lastPointInList.y) {
-                int startCoord = (lastPointInList.x < prelastPointInList.x) ? lastPointInList.x : prelastPointInList.x;
-                int endCoord = (lastPointInList.x > prelastPointInList.x) ? lastPointInList.x : prelastPointInList.x;
-                for (int i = startCoord; i <= endCoord; i++) {
-                    [allPointsUsedInCurrentChain removeLastObject];
-                    IntegerPoint *pointToRemove = [IntegerPoint integerPointWithX:lastPointInList.x andY:i];
+                
+                //preventing from making point red if is still exists in chain
+                BOOL isStillInList = NO;
+                for (int j = 0; j < [allPointsUsedInCurrentChain count]; j++) {
+                    IntegerPoint *pointFromList = [allPointsUsedInCurrentChain objectAtIndex:j];
+                    if ([pointToRemove isEqualToPoint:pointFromList]) {
+                        isStillInList = YES;
+                        break;
+                    }
+                }
+                if (!isStillInList) {
                     [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
                 }
+                
             }
+        } else
+            if (prelastPointInChain.y == lastPointInList.y) {
+                int startCoord = (lastPointInList.x < prelastPointInChain.x) ? lastPointInList.x : prelastPointInChain.x;
+                int endCoord = (lastPointInList.x > prelastPointInChain.x) ? lastPointInList.x : prelastPointInChain.x;
+                if (lastPointInList.x > prelastPointInChain.x) {
+                    startCoord++;
+                } else {
+                    endCoord--;
+                }
+                for (int i = startCoord; i <= endCoord; i++) {
+                    [allPointsUsedInCurrentChain removeLastObject];
+                    IntegerPoint *pointToRemove = [IntegerPoint integerPointWithX:i andY:lastPointInList.y];
+                    
+                    //preventing from making point red if is still exists in chain
+                    BOOL isStillInList = NO;
+                    for (int j = 0; j < [allPointsUsedInCurrentChain count]; j++) {
+                        IntegerPoint *pointFromList = [allPointsUsedInCurrentChain objectAtIndex:j];
+                        if ([pointToRemove isEqualToPoint:pointFromList]) {
+                            isStillInList = YES;
+                            break;
+                        }
+                    }
+                    if (!isStillInList) {
+                        [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
+                    }
+                }
+            }
+        [buttons[prelastPointInChain.x + prelastPointInChain.y * FIELD_SIZE] setBackgroundColor:[UIColor greenColor]];
     } else {
         [allPointsUsedInCurrentChain removeLastObject];
     }
+    NSLog(@"line length = %d", [allPointsUsedInCurrentChain count]);
 }
 
 -(BOOL) addPoint: (IntegerPoint*) nextPoint
 {
-    IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
-    IntegerPoint *prelastPointInList = nil;
-    
-    if ([dotsFromCurrentChain count] > 1) {
-        prelastPointInList = [dotsFromCurrentChain objectAtIndex:[dotsFromCurrentChain count] - 2];
+    IntegerPoint *lastPointInChain = nil;
+    if ([dotsFromCurrentChain count] > 0) {
+        lastPointInChain = [dotsFromCurrentChain lastObject];
     }
+    
     if (!nextPoint) {
         return false;
     } else {
-        [dotsFromCurrentChain addObject:nextPoint];    //add points affected by line
-        
-        if (nextPoint.x == lastPointInList.x) {
-            int startCoord = (lastPointInList.y < nextPoint.y) ? lastPointInList.y : nextPoint.y;
-            int endCoord = (lastPointInList.y > nextPoint.y) ? lastPointInList.y : nextPoint.y;
-            for (int i = startCoord; i <= endCoord; i++) {
-                IntegerPoint *pointToAdd = [IntegerPoint integerPointWithX:nextPoint.x andY:i];
-                [allPointsUsedInCurrentChain addObject:pointToAdd];
-                [buttons[pointToAdd.x + pointToAdd.y * FIELD_SIZE] setBackgroundColor:[UIColor yellowColor]];
-            }
-        } else
-            if (nextPoint.y == lastPointInList.y) {
-                int startCoord = (lastPointInList.x < nextPoint.x) ? lastPointInList.x : nextPoint.x;
-                int endCoord = (lastPointInList.x > nextPoint.x) ? lastPointInList.x : nextPoint.x;
+        [dotsFromCurrentChain addObject:nextPoint];
+        if (lastPointInChain) {
+            if (nextPoint.x == lastPointInChain.x) {
+                int startCoord = (lastPointInChain.y < nextPoint.y) ? lastPointInChain.y : nextPoint.y;
+                int endCoord = (lastPointInChain.y > nextPoint.y) ? lastPointInChain.y : nextPoint.y;
+                if (nextPoint.y > lastPointInChain.y) {
+                    startCoord++;
+                } else {
+                    endCoord--;
+                }
                 for (int i = startCoord; i <= endCoord; i++) {
-                    IntegerPoint *pointToAdd = [IntegerPoint integerPointWithX:i andY:nextPoint.y];
+                    IntegerPoint *pointToAdd = [IntegerPoint integerPointWithX:nextPoint.x andY:i];
                     [allPointsUsedInCurrentChain addObject:pointToAdd];
                     [buttons[pointToAdd.x + pointToAdd.y * FIELD_SIZE] setBackgroundColor:[UIColor yellowColor]];
                 }
-            }
-        
+            } else
+                if (nextPoint.y == lastPointInChain.y) {
+                    int startCoord = (lastPointInChain.x < nextPoint.x) ? lastPointInChain.x : nextPoint.x;
+                    int endCoord = (lastPointInChain.x > nextPoint.x) ? lastPointInChain.x : nextPoint.x;
+                    if (nextPoint.x > lastPointInChain.x) {
+                        startCoord++;
+                    } else {
+                        endCoord--;
+                    }
+                    for (int i = startCoord; i <= endCoord; i++) {
+                        IntegerPoint *pointToAdd = [IntegerPoint integerPointWithX:i andY:nextPoint.y];
+                        [allPointsUsedInCurrentChain addObject:pointToAdd];
+                        [buttons[pointToAdd.x + pointToAdd.y * FIELD_SIZE] setBackgroundColor:[UIColor yellowColor]];
+                    }
+                }
+            
+        } else {
+            [allPointsUsedInCurrentChain addObject:nextPoint];
+        }
         NSLog(@"DOTS CHECKED: %d", [dotsFromCurrentChain count]);
         [buttons[nextPoint.x + nextPoint.y * FIELD_SIZE] setBackgroundColor:[UIColor greenColor]];
+        NSLog(@"line length = %d", [allPointsUsedInCurrentChain count]);
+        
+        IntegerPoint *firstPointInChain = [dotsFromCurrentChain firstObject];
+        lastPointInChain = [dotsFromCurrentChain lastObject];
+        if ([firstPointInChain isEqualToPoint:lastPointInChain] &&
+            [dotsFromCurrentChain count] >= 4) {
+            [self explodeChain];
+        }
+        
         return true;
     }
 }
@@ -276,34 +313,34 @@ NSTimer *timer1;
 -(IntegerPoint *) detectNextPointToAddWhenXCoordAreEqual: (IntegerPoint *) point
 {
     IntegerPoint *ip = point;
-    IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
-    int startCoord = (lastPointInList.y < ip.y) ? lastPointInList.y : ip.y;
-    int endCoord = (lastPointInList.y > ip.y) ? lastPointInList.y : ip.y;
+    IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
+    int startCoord = (lastPointInChain.y < ip.y) ? lastPointInChain.y : ip.y;
+    int endCoord = (lastPointInChain.y > ip.y) ? lastPointInChain.y : ip.y;
     IntegerPoint *pointMostCloseToLast = nil;
     for (int i = 0; i < [allDots count]; i++) {
         IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
-        if (dotToCheck.x == lastPointInList.x && dotToCheck.y < endCoord && dotToCheck.y > startCoord) {
+        if (dotToCheck.x == lastPointInChain.x && dotToCheck.y < endCoord && dotToCheck.y > startCoord) {
             if (pointMostCloseToLast) {
-                if (abs(dotToCheck.y - lastPointInList.y) < abs(pointMostCloseToLast.y - lastPointInList.y)) {
+                if (abs(dotToCheck.y - lastPointInChain.y) < abs(pointMostCloseToLast.y - lastPointInChain.y)) {
                     pointMostCloseToLast = dotToCheck;
                 }
             } else {
                 pointMostCloseToLast = dotToCheck;
             }
-            BOOL isAlreadyInList = NO;
-            for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
-                IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
-                if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
-                    isAlreadyInList = YES;
-                    break;
-                }
-            }
-            if (isAlreadyInList) {
-                NSLog(@"Cannot add a dot by intersecting a dot already in list");
-                return nil;
-            }
             ip = pointMostCloseToLast;
         }
+    }
+    BOOL isAlreadyInList = NO;
+    for (int j = 1; j < [dotsFromCurrentChain count]; j++) {
+        IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+        if ([dotFromList isEqualToPoint:ip]) {
+            isAlreadyInList = YES;
+            break;
+        }
+    }
+    if (isAlreadyInList) {
+        NSLog(@"Cannot add a dot by intersecting a dot already in list");
+        return nil;
     }
     return ip;
 }
@@ -311,37 +348,107 @@ NSTimer *timer1;
 -(IntegerPoint *) detectNextPointToAddWhenYCoordAreEqual: (IntegerPoint *) point
 {
     IntegerPoint *ip = point;
-    IntegerPoint *lastPointInList = [dotsFromCurrentChain lastObject];
-    int startCoord = (lastPointInList.x < ip.x) ? lastPointInList.x : ip.x;
-    int endCoord = (lastPointInList.x > ip.x) ? lastPointInList.x : ip.x;
+    IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
+    int startCoord = (lastPointInChain.x < ip.x) ? lastPointInChain.x : ip.x;
+    int endCoord = (lastPointInChain.x > ip.x) ? lastPointInChain.x : ip.x;
     IntegerPoint *pointMostCloseToLast = nil;
     for (int i = 0; i < [allDots count]; i++) {
         IntegerPoint *dotToCheck = [allDots objectAtIndex:i];
-        if (dotToCheck.y == lastPointInList.y && dotToCheck.x < endCoord && dotToCheck.x > startCoord) {
+        if (dotToCheck.y == lastPointInChain.y && dotToCheck.x < endCoord && dotToCheck.x > startCoord) {
             if (pointMostCloseToLast) {
-                if (abs(dotToCheck.x - lastPointInList.x) < abs(pointMostCloseToLast.x - lastPointInList.x)) {
+                if (abs(dotToCheck.x - lastPointInChain.x) < abs(pointMostCloseToLast.x - lastPointInChain.x)) {
                     pointMostCloseToLast = dotToCheck;
                 }
             } else {
                 pointMostCloseToLast = dotToCheck;
             }
-            NSLog(@"Im here");
-            BOOL isAlreadyInList = NO;
-            for (int j = 0; j < [dotsFromCurrentChain count]; j++) {
-                IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
-                if (dotFromList.x == pointMostCloseToLast.x && dotFromList.y == pointMostCloseToLast.y) {
-                    isAlreadyInList = YES;
-                    break;
-                }
-            }
-            if (isAlreadyInList) {
-                NSLog(@"Cannot add a dot by intersecting a dot already in list");
-                return nil;
-            }
             ip = pointMostCloseToLast;
         }
     }
+    BOOL isAlreadyInList = NO;
+    for (int j = 1; j < [dotsFromCurrentChain count]; j++) {
+        IntegerPoint *dotFromList = [dotsFromCurrentChain objectAtIndex:j];
+        if ([dotFromList isEqualToPoint:ip]) {
+            isAlreadyInList = YES;
+            break;
+        }
+    }
+    if (isAlreadyInList) {
+        NSLog(@"Cannot add a dot by intersecting a dot already in list");
+        return nil;
+    }
     return ip;
+}
+
+-(BOOL) pointContainsDot: (IntegerPoint *) point
+{
+    
+    BOOL isDotInClickedButton = NO;
+    for (int i = 0; i < [allDots count]; i++) {
+        IntegerPoint *curPoint = [allDots  objectAtIndex:i];
+        if ([point isEqualToPoint:curPoint]) {
+            isDotInClickedButton = YES;
+        }
+    }
+    
+    if (isDotInClickedButton) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+-(IntegerPoint *) pointByClickedSender: (id) sender
+{
+    int positionOfSender = -1;
+    for (int i = 0; i < FIELD_SIZE * FIELD_SIZE; i++) {
+        if ([sender isEqual:buttons[i]]) {
+            positionOfSender = i;
+            break;
+        }
+    }
+    IntegerPoint *point = nil;
+    point = [IntegerPoint integerPointWithX:positionOfSender % FIELD_SIZE andY:positionOfSender / FIELD_SIZE];
+    return point;
+}
+
+-(void) explodeChain
+{
+    int n = [self calculateScore];
+    score += n;
+    NSLog(@"Chain is exploded for %d score; total score = %ld", n, score);
+    NSLog(@"total dot count before deleting: %d", [allDots count]);
+    
+    for (int i = 0; i < [dotsFromCurrentChain count] - 1; i++) {
+        IntegerPoint *dotFromChain = [dotsFromCurrentChain objectAtIndex:i];
+        for (int j = 0; j < [allDots count]; j++) {
+            IntegerPoint *dotFromListOfAll = [allDots objectAtIndex:j];
+            if ([dotFromChain isEqualToPoint:dotFromListOfAll]) {
+                [allDots removeObjectAtIndex:j];
+                [buttons[dotFromChain.x + dotFromChain.y * FIELD_SIZE] setTitle:@"" forState:UIControlStateNormal];
+                break;
+            }
+        }
+    }
+    
+    for (int i = 0; i < [allPointsUsedInCurrentChain count]; i++) {
+        IntegerPoint *point = [allPointsUsedInCurrentChain objectAtIndex:i];
+        [buttons[point.x + point.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
+    }
+    
+    [allPointsUsedInCurrentChain removeAllObjects];
+    [dotsFromCurrentChain removeAllObjects];
+    NSLog(@"total dot count after deleting: %d", [allDots count]);
+}
+
+//calculates score for exploding a chain
+-(int) calculateScore
+{
+    int score = 0;
+    
+    score = [allPointsUsedInCurrentChain count];
+    
+    return score;
 }
 
 @end
