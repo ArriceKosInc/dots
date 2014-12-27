@@ -22,6 +22,7 @@
 		8486AB4B1A4A071E00A5E506 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8486AB2A1A4A071D00A5E506 /* UIKit.framework */; };
 		8486AB531A4A071E00A5E506 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8486AB511A4A071E00A5E506 /* InfoPlist.strings */; };
 		8486AB551A4A071E00A5E506 /* dotsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 8486AB541A4A071E00A5E506 /* dotsTests.m */; };
+		8486AB671A4ECB5700A5E506 /* Bonus.m in Sources */ = {isa = PBXBuildFile; fileRef = 8486AB661A4ECB5700A5E506 /* Bonus.m */; };
 		8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */; };
 /* End PBXBuildFile section */
 
@@ -57,6 +58,8 @@
 		8486AB521A4A071E00A5E506 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8486AB541A4A071E00A5E506 /* dotsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = dotsTests.m; sourceTree = "<group>"; };
 		8486AB621A4A1A3000A5E506 /* Globals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Globals.h; sourceTree = "<group>"; };
+		8486AB651A4ECB5700A5E506 /* Bonus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bonus.h; sourceTree = "<group>"; };
+		8486AB661A4ECB5700A5E506 /* Bonus.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Bonus.m; sourceTree = "<group>"; };
 		8B18EB1A1A4A2D06002D274D /* IntegerPoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntegerPoint.h; sourceTree = "<group>"; };
 		8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IntegerPoint.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -169,6 +172,8 @@
 				8B18EB1A1A4A2D06002D274D /* IntegerPoint.h */,
 				8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */,
 				8486AB621A4A1A3000A5E506 /* Globals.h */,
+				8486AB651A4ECB5700A5E506 /* Bonus.h */,
+				8486AB661A4ECB5700A5E506 /* Bonus.m */,
 			);
 			name = model;
 			sourceTree = "<group>";
@@ -295,6 +300,7 @@
 			files = (
 				8486AB401A4A071E00A5E506 /* ViewController.m in Sources */,
 				8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */,
+				8486AB671A4ECB5700A5E506 /* Bonus.m in Sources */,
 				8486AB371A4A071E00A5E506 /* AppDelegate.m in Sources */,
 				8486AB331A4A071D00A5E506 /* main.m in Sources */,
 			);
