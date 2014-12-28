@@ -17,8 +17,8 @@
     {
         self.position = [IntegerPoint integerPointWithX:0 andY:0];
         self.bonusType = BonusTypeScoreModifier;
-        self.effectDuration = 10;
-        self.lifeTime = 10;
+        self.effectDuration = DEFAULT_BONUS_EFFECT_DURATION;
+        self.lifeTime = DEFAULT_BONUS_LIFETIME;
     }
     return self;
 }

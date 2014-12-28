@@ -26,11 +26,14 @@ NSMutableArray *barrierImages;
 NSMutableArray *bonuses;
 NSMutableArray *bonusImages;
 NSTimer *timer1;
+NSTimer *timer2;
 long int score;
 int difficulty;
+int speed;
 BOOL barriersAreActive;
 float scoreModifier;
 int maximumDotLimit;
+float tickDuration;
 
 BOOL visited[FIELD_SIZE * FIELD_SIZE];
 
@@ -38,11 +41,6 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
 {
     [super viewDidLoad];
     NSLog(@"Start...");
-    timer1 = [NSTimer scheduledTimerWithTimeInterval:TICK
-                                     target:self
-                                   selector:@selector(onTick:)
-                                   userInfo:nil
-                                    repeats:YES];
     buttons = [NSMutableArray new];
     allDots = [NSMutableArray new];
     dotsFromCurrentChain = [NSMutableArray new];
@@ -52,11 +50,27 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     barrierImages = [NSMutableArray new];
     bonuses = [NSMutableArray new];
     bonusImages = [NSMutableArray new];
-    score = 0;
-    difficulty = 9;
+    score = SCORE_INITIAL;
+    difficulty = 1;
+    speed = 4;
+    tickDuration = [self tickDurationForSpeed:speed];
     barriersAreActive = YES;
     scoreModifier = SCORE_MODIFIER_NORMAL;
     maximumDotLimit = MAXIMUM_DOT_COUNT_INITIAL;
+    
+    //возможно, перенести в конец метода, если время его работы будет соизмеримо с длиной тика на самой высокой скорости
+    timer1 = [NSTimer scheduledTimerWithTimeInterval:tickDuration
+                                              target:self
+                                            selector:@selector(onTick:)
+                                            userInfo:nil
+                                             repeats:YES];
+    //создать таймер для спауна бонусов
+    timer2 = [NSTimer scheduledTimerWithTimeInterval:BONUS_SPAWN_COOLDOWN
+                                              target:self
+                                            selector:@selector(addBonusToField:)
+                                            userInfo:nil
+                                             repeats:YES];
+    
     
     int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
     
@@ -97,19 +111,9 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         [self.view addSubview:barrierImages[i + [horizontalBarriers count]]];
     }
     
-//    for (int i = 0; i < 10; i++) {
-//        [self addBonusToField];
-//        Bonus *bonus = [bonuses objectAtIndex:i];
-//        NSLog(@"spawned a bonus with type: %d and coords %d %d", bonus.bonusType, bonus.position.x, bonus.position.y);
-//    }
-//    for (int i = 0; i < 5; i++) {
-//        Bonus *bonus = [bonuses objectAtIndex:0];
-//        NSLog(@"removed a bonus with type: %d and coords %d %d", bonus.bonusType, bonus.position.x, bonus.position.y);
-//        [self removeBonusFromField:bonus activate:NO];
-//    }
-    [self addBonusToField];
-    Bonus *bonus = [bonuses objectAtIndex:0];
-    [self activateBonus:bonus];
+//    [self addBonusToField];
+//    Bonus *bonus = [bonuses objectAtIndex:0];
+//    [self activateBonus:bonus];
     
 	// Do any additional setup after loading the view, typically from a nib.
 }
@@ -118,63 +122,19 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     [self addDotToField];
     if ([allDots count] > maximumDotLimit) {
         [timer1 invalidate];
+        [timer2 invalidate];
         NSLog(@"game over");
     }
 }
-
+//бонус может спауниться в недоступных местах. решить, что с этим делать
 - (IntegerPoint *)getRandomPoint
 {
-    int rand = arc4random_uniform(FIELD_SIZE * FIELD_SIZE);
-    IntegerPoint *point = [IntegerPoint integerPointWithX:rand % FIELD_SIZE andY:rand / FIELD_SIZE];
-    return point;
-}
-////////////////////////////////////////////////////////////
-- (BonusType)getRandomBonusType
-{
-    BonusType rand = arc4random_uniform(numBonusTypes);
-    if (maximumDotLimit >= MAXIMUM_DOT_COUNT_LIMIT && rand == BonusTypeDotLimit) {
-        do {
-            rand = arc4random_uniform(numBonusTypes);
-        } while (rand == BonusTypeDotLimit);
-    }
-    return 3;
-}
-
-- (void)addDotToField
-{
     BOOL match;
-    IntegerPoint *ip;
+    IntegerPoint *ip = nil;
     do {
         match = NO;
-        ip =[self getRandomPoint];
-        for (int i = 0; i < [allDots count]; i++) {
-            IntegerPoint *pointFromArray = [allDots objectAtIndex:i];
-            if ([pointFromArray isEqualToPoint:ip]) {
-                match = YES;
-                break;
-            }
-        }
-        if (!match) {
-            for (int i = 0; i < [allPointsUsedInCurrentChain count]; i++) {
-                IntegerPoint *pointFromArray = [allPointsUsedInCurrentChain objectAtIndex:i];
-                if ([pointFromArray isEqualToPoint:ip]) {
-                    match = YES;
-                    break;
-                }
-            }
-        }
-    } while (match);
-    [allDots addObject:ip];
-    [buttons[ip.x + ip.y * FIELD_SIZE] setTitle:@"x" forState:UIControlStateNormal];
-}
-
-- (void)addBonusToField
-{
-    BOOL match;
-    IntegerPoint *ip;
-    do {
-        match = NO;
-        ip =[self getRandomPoint];
+        int rand = arc4random_uniform(FIELD_SIZE * FIELD_SIZE);
+        ip = [IntegerPoint integerPointWithX:rand % FIELD_SIZE andY:rand / FIELD_SIZE];
         for (int i = 0; i < [allDots count]; i++) {
             IntegerPoint *pointFromArray = [allDots objectAtIndex:i];
             if ([pointFromArray isEqualToPoint:ip]) {
@@ -201,6 +161,38 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             }
         }
     } while (match);
+    return ip;
+}
+////////////////////////////////////////////////////////////
+- (BonusType)getRandomBonusType
+{
+    BOOL bonusTypeDotLimitIsAllowed = YES;
+    BOOL bonusTypeLowerSpeedIsAllowed = YES;
+    BonusType rand = 0;
+    if (maximumDotLimit >= MAXIMUM_DOT_COUNT_LIMIT) {
+        bonusTypeDotLimitIsAllowed = NO;
+    }
+    if (speed == MINIMUM_SPEED) {
+        bonusTypeLowerSpeedIsAllowed = NO;
+    }
+    do {
+        rand = arc4random_uniform(numBonusTypes);
+    } while ((!bonusTypeLowerSpeedIsAllowed && rand == BonusTypeLowerSpeed) ||
+             (!bonusTypeDotLimitIsAllowed && rand == BonusTypeDotLimit));
+    return rand;
+}
+
+//переделать для случая, когда активирован бонус добавления точки в любое место
+- (void)addDotToField
+{
+    IntegerPoint *ip = [self getRandomPoint];
+    [allDots addObject:ip];
+    [buttons[ip.x + ip.y * FIELD_SIZE] setTitle:@"x" forState:UIControlStateNormal];
+}
+
+- (void)addBonusToField:(NSTimer *)timer
+{
+    IntegerPoint *ip = [self getRandomPoint];
     //choose bonus type
     BonusType bt = [self getRandomBonusType];
     Bonus *bonus = [[Bonus alloc] init];
@@ -217,20 +209,28 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                                                                  cellWidth - 13)];
     switch (bonus.bonusType) {
         case BonusTypeIgnoreBarriers:
+            [bonusLabel setText:@"I"];
+            break;
         case BonusTypeScoreModifier:
-        case BonusTypeAdditionalPoint:
+            [bonusLabel setText:@"S"];
+            break;
+        //case BonusTypeAdditionalPoint:
         case BonusTypeDotLimit:
+            [bonusLabel setText:@"D"];
+            break;
         case BonusTypeLowerSpeed:
-            [bonusLabel setBackgroundColor:[UIColor grayColor]];
+            [bonusLabel setText:@"L"];
             break;
         default: [NSException raise:@"bonus_type_exception" format:@"invalid bonus type"];
             break;
     }
+    
+    [bonusLabel setBackgroundColor:[UIColor grayColor]];
     [self.view addSubview:bonusLabel];
     [bonusImages addObject:bonusLabel];
     
     NSString *bonusInfo = [bonus toString];
-    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:bonus.lifeTime
+    [NSTimer scheduledTimerWithTimeInterval:bonus.lifeTime
                                                       target:self
                                                     selector:@selector(prepareRemovingBonus:)
                                                     userInfo:bonusInfo
@@ -286,15 +286,17 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         
         // if same x
         if (lastPointInChain.x == clickedPoint.x) {
-            nextPointToAdd = [self detectNextPointToAddWhenXCoordAreEqual:clickedPoint];
+            nextPointToAdd = [self detectNextPointEqualByX:clickedPoint];
             if (!prelastPointInList) {
                 if (![self addPoint:nextPointToAdd]) {
+                    [self actionIsImpossible];
                     return;
                 }
             } else {
                 if (lastPointInChain.x == prelastPointInList.x) {
                     if ([clickedPoint makesRayWithPoint1:lastPointInChain andPoint2:prelastPointInList]) {
                         if (![self addPoint:nextPointToAdd]) {
+                            [self actionIsImpossible];
                             return;
                         }
                     } else {
@@ -303,6 +305,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                 }
                 if (lastPointInChain.y == prelastPointInList.y) {
                     if (![self addPoint:nextPointToAdd]) {
+                        [self actionIsImpossible];
                         return;
                     }
                 }
@@ -311,15 +314,17 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         
         // if same y
         if (lastPointInChain.y == clickedPoint.y) {
-            nextPointToAdd = [self detectNextPointToAddWhenYCoordAreEqual:clickedPoint];
+            nextPointToAdd = [self detectNextPointEqualByY:clickedPoint];
             if (!prelastPointInList) {
                 if (![self addPoint:nextPointToAdd]) {
+                    [self actionIsImpossible];
                     return;
                 }
             } else {
                 if (lastPointInChain.y == prelastPointInList.y) {
                     if ([clickedPoint makesRayWithPoint1:lastPointInChain andPoint2:prelastPointInList]) {
                         if (![self addPoint:nextPointToAdd]) {
+                            [self actionIsImpossible];
                             return;
                         }
                     } else {
@@ -328,6 +333,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                 }
                 if (lastPointInChain.x == prelastPointInList.x) {
                     if (![self addPoint:nextPointToAdd]) {
+                        [self actionIsImpossible];
                         return;
                     }
                 }
@@ -497,7 +503,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     }
 }
 
--(IntegerPoint *) detectNextPointToAddWhenXCoordAreEqual: (IntegerPoint *) point
+-(IntegerPoint *) detectNextPointEqualByX: (IntegerPoint *) point
 {
     IntegerPoint *ip = point;
     IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
@@ -549,7 +555,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     return ip;
 }
 
--(IntegerPoint *) detectNextPointToAddWhenYCoordAreEqual: (IntegerPoint *) point
+-(IntegerPoint *) detectNextPointEqualByY: (IntegerPoint *) point
 {
     IntegerPoint *ip = point;
     IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
@@ -677,12 +683,12 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     NSLog(@"total dot count after deleting: %d", [allDots count]);
 }
 
-//calculates score for exploding a chain
+//придумать и написать адекватную формулу для подсчета очков
 -(int) calculateScore
 {
     int score = 0;
     
-    score = [allPointsUsedInCurrentChain count] * scoreModifier;
+    score = round([allPointsUsedInCurrentChain count] * scoreModifier) * (speed + 1) * (difficulty + 1);
     
     return score;
 }
@@ -755,6 +761,9 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
 
 -(int) numberOfBarriersForDifficulty:(int) difficulty
 {
+    if (difficulty > MAXIMUM_DIFFICULTY || difficulty < MINIMUM_DIFFICULTY) {
+        [NSException raise:@"difficulty_exception" format:@"invalid difficulty"];
+    }
     int barriersCount = 0;
     switch (difficulty) {
         case 0: case 1: case 2: case 3: barriersCount = difficulty * 4; break;
@@ -767,6 +776,17 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     }
     return barriersCount;
 }
+
+-(float) tickDurationForSpeed:(int) speed
+{
+    if (speed > MAXIMUM_SPEED || speed < MINIMUM_SPEED) {
+        [NSException raise:@"speed_exception" format:@"invalid speed"];
+    }
+    float tickDuration = 0;
+    tickDuration = MAXIMUM_TICK_DURATION - (MAXIMUM_TICK_DURATION - MINIMUM_TICK_DURATION) / MAXIMUM_SPEED * speed;
+    return tickDuration;
+}
+
 
 -(IntegerPoint *) generateBarrierForField:(int[FIELD_SIZE * FIELD_SIZE][FIELD_SIZE * FIELD_SIZE]) field
                                 usingEtal:(int[FIELD_SIZE * FIELD_SIZE][FIELD_SIZE * FIELD_SIZE]) field_etal
@@ -864,6 +884,21 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
 //определить бонусы, которые должны быть активированы после взрыва цепи
 -(void) detectBonuses
 {
+    NSMutableArray *detectedBonuses = [NSMutableArray new];
+    for (int i = 0; i < [allPointsUsedInCurrentChain count]; i++) {
+        IntegerPoint *pointInChain = [allPointsUsedInCurrentChain objectAtIndex:i];
+        for (int j = 0; j < [bonuses count]; j++) {
+            Bonus *bonus = [bonuses objectAtIndex:j];
+            if ([bonus.position isEqualToPoint:pointInChain]) {
+                [detectedBonuses addObject:bonus];
+                break;
+            }
+        }
+    }
+    for (int i = 0; i < [detectedBonuses count]; i++) {
+        Bonus *detectedBonus = [detectedBonuses objectAtIndex:i];
+        [self removeBonusFromField:detectedBonus activate:YES];
+    }
     
 }
 //возможно, внести в бонус поле время действия и, возможно, время существования
@@ -880,7 +915,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             NSLog(@"activated bonus: SCORE_MODIFIER");
             scoreModifier = SCORE_MODIFIER_BONUS;
             break;
-        case BonusTypeAdditionalPoint:
+        //case BonusTypeAdditionalPoint:
         case BonusTypeDotLimit:
             NSLog(@"activated bonus: MAXIMUM_DOT_LIMIT");
             if (maximumDotLimit + MAXIMUM_DOT_COUNT_STEP <= MAXIMUM_DOT_COUNT_LIMIT) {
@@ -889,20 +924,34 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             NSLog(@"maximum dot limit now is %d", maximumDotLimit);
             break;
         case BonusTypeLowerSpeed:
+            NSLog(@"activated bonus: LOWER_SPEED");
+            if (speed > MINIMUM_SPEED) {
+                speed--;
+                float newTickDuration = [self tickDurationForSpeed:speed];
+                [timer1 invalidate];
+                timer1 = nil;
+                timer1 = [NSTimer scheduledTimerWithTimeInterval:newTickDuration
+                                                          target:self
+                                                        selector:@selector(onTick:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+            } else {
+                [NSException raise:@"speed_exception" format:@"invalid speed"];
+            }
             break;
         default: [NSException raise:@"bonus_type_exception" format:@"invalid bonus type"];
             break;
     }
     
     NSString *bonusInfo = [bonus toString];
-    NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:bonus.effectDuration
+    [NSTimer scheduledTimerWithTimeInterval:bonus.effectDuration
                                      target:self
                                    selector:@selector(deactivateBonus:)
                                    userInfo:bonusInfo
                                     repeats:NO];
 }
 
--(void) deactivateBonus:(NSTimer*)theTimer
+-(void) deactivateBonus:(NSTimer *)theTimer
 {
     NSString *bonusInfo = (NSString *)[theTimer userInfo];
     Bonus *bonus = [Bonus bonusFromString:bonusInfo];
@@ -916,11 +965,25 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             NSLog(@"deactivated bonus: SCORE_MODIFIER");
             scoreModifier = SCORE_MODIFIER_NORMAL;
             break;
-        case BonusTypeAdditionalPoint:
+        //case BonusTypeAdditionalPoint:
         case BonusTypeDotLimit:
             NSLog(@"this bonus will not be deactivated: MAXIMUM_DOT_LIMIT");
             break;
         case BonusTypeLowerSpeed:
+            NSLog(@"deactivated bonus: LOWER_SPEED");
+            if (speed < MAXIMUM_SPEED) {
+                speed++;
+                float newTickDuration = [self tickDurationForSpeed:speed];
+                [timer1 invalidate];
+                timer1 = nil;
+                timer1 = [NSTimer scheduledTimerWithTimeInterval:newTickDuration
+                                                          target:self
+                                                        selector:@selector(onTick:)
+                                                        userInfo:nil
+                                                         repeats:YES];
+            } else {
+                [NSException raise:@"speed_exception" format:@"invalid speed"];
+            }
             break;
         default: [NSException raise:@"bonus_type_exception" format:@"invalid bonus type"];
             break;

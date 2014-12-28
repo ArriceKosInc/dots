@@ -10,7 +10,7 @@
 typedef enum {
     BonusTypeIgnoreBarriers = 0,
     BonusTypeScoreModifier,
-    BonusTypeAdditionalPoint,
+    //BonusTypeAdditionalPoint,
     BonusTypeDotLimit,
     BonusTypeLowerSpeed,
     numBonusTypes
