@@ -37,6 +37,7 @@ float tickDuration;
 
 BOOL visited[FIELD_SIZE * FIELD_SIZE];
 
+//пофиксить баг, вследствие которого при двух подряд взятых бонусах игнора барьеров барьеры будут отключены
 - (void)viewDidLoad
 {
     [super viewDidLoad];
