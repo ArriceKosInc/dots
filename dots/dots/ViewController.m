@@ -9,6 +9,7 @@
 #import "ViewController.h"
 #import "Bonus.h"
 #import <QuartzCore/QuartzCore.h>
+#import "DACircularProgressView.h"
 @interface ViewController ()
 
 @end
@@ -25,6 +26,8 @@ NSMutableArray *verticalBarriers;
 NSMutableArray *barrierImages;
 NSMutableArray *bonuses;
 NSMutableArray *bonusImages;
+NSMutableArray *activatedBonusImages;
+NSMutableArray *activatedBonuses;
 NSTimer *timer1;
 NSTimer *timer2;
 
@@ -40,12 +43,10 @@ BOOL isGameOver;
 
 BOOL visited[FIELD_SIZE * FIELD_SIZE];
 
-//пофиксить баг, вследствие которого при двух подряд взятых бонусах игнора барьеров барьеры будут отключены
-//пофиксить баг с пропуском спауна точек
 //реализовать режим динамически изменяемой скорости. в этом режиме скорость изменяется каждые там условные 20 секунд, во время смены скорости заново генерируются барьеры
 //необходимо рассмотреть, что делать в этом случае с текущей цепью. возможно, генерировать их после замыкания или разрыва цепи
 //реализовать паузу
-//
+//количество очков набранное за цепь показывать в центре, затем оно уезжает вверх
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -61,6 +62,9 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     barrierImages = [NSMutableArray new];
     bonuses = [NSMutableArray new];
     bonusImages = [NSMutableArray new];
+    activatedBonusImages = [NSMutableArray new];
+    activatedBonuses = [NSMutableArray new];
+    
     score = SCORE_INITIAL;
     difficulty = 1;
     speed = 5;
@@ -70,8 +74,8 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     scoreModifier = SCORE_MODIFIER_NORMAL;
     maximumDotLimit = MAXIMUM_DOT_COUNT_INITIAL;
     isGameOver = NO;
-    
 
+    
     //возможно, перенести в конец метода, если время его работы будет соизмеримо с длиной тика на самой высокой скорости
     timer1 = [NSTimer scheduledTimerWithTimeInterval:tickDuration
                                               target:self
@@ -148,6 +152,15 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
 //    [self activateBonus:bonus];
     
 	// Do any additional setup after loading the view, typically from a nib.
+    DACircularProgressView *progressView;
+    progressView = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 500.0f, 500.0f)];
+    progressView.roundedCorners = NO;
+    progressView.thicknessRatio = 1.0f;
+    progressView.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0];
+    progressView.progressTintColor = [UIColor colorWithWhite:1.0 alpha:0.5];
+    [self.view addSubview:progressView];
+    [self.view bringSubviewToFront:progressView];
+    progressView.progress = 0.6;
 }
 
 -(void)onTick:(NSTimer *)timer {
@@ -187,7 +200,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     }
     for (int i = 0; i < [pointsToBeRemoved count]; i++) {
         IntegerPoint *pointToRemove = [pointsToBeRemoved objectAtIndex:i];
-        [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:self.view.backgroundColor];
+        [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor lightGrayColor]];
     }
     
     [allPointsUsedInCurrentChain removeAllObjects];
@@ -326,13 +339,28 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         if ([bonus isEqualToBonus:bon]) {
             if (activate) {
                 [self activateBonus:bonus];
+                UILabel *image = [bonusImages objectAtIndex:i];
+                [bonusImages removeObjectAtIndex:i];
+                [activatedBonusImages addObject:image];
+                int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
+                CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
+                                                       [[UIScreen mainScreen] bounds].size.height * 1 / 17);
+                [UIView animateWithDuration:0.3 animations:^{  // animate the following:
+                    image.frame = CGRectMake(bonusStartPoint.x,
+                                             bonusStartPoint.y + (cellWidth + 3) * [activatedBonusImages count],
+                                             image.frame.size.width,
+                                             image.frame.size.height); // move to new location
+                }];
+            } else {
+                
             }
             
-            UILabel *image = [bonusImages objectAtIndex:i];
-            [image removeFromSuperview];
-            
-            [bonusImages removeObjectAtIndex:i];
-            [bonuses removeObjectAtIndex:i];
+//            UILabel *image = [bonusImages objectAtIndex:i];
+//            [image removeFromSuperview];
+//            
+//            [bonusImages removeObjectAtIndex:i];
+            [bonuses removeObjectAtIndex:i];    /////???????????????????????????????
+            [activatedBonuses addObject:bonus];
             return;
         }
     }
@@ -347,13 +375,90 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     }
 
     if ([dotsFromCurrentChain count] == 1) {
+        IntegerPoint *nextPointToAdd = nil;
         IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
         if (clickedPoint.x != lastPointInChain.x && clickedPoint.y != lastPointInChain.y) {
             [self removePoint];
             [self addPoint:clickedPoint];
             return;
         }
+        if (clickedPoint.x == lastPointInChain.x) {
+            int dotsToAddInARow = 0;
+            nextPointToAdd = lastPointInChain;
+            while (![nextPointToAdd isEqualToPoint:clickedPoint]) {
+                dotsToAddInARow++;
+                nextPointToAdd = [self detectNextPointEqualByX:clickedPoint fromPoint:nextPointToAdd];
+                NSLog(@"%d %d", nextPointToAdd.x, nextPointToAdd.y);
+                if (!nextPointToAdd) {
+                    [self removePoint];
+                    [self addPoint:clickedPoint];
+                    NSLog(@"replacing first point");
+                    return;
+                }
+            }
+        } else if (clickedPoint.y == lastPointInChain.y) {
+            int dotsToAddInARow = 0;
+            nextPointToAdd = lastPointInChain;
+            while (![nextPointToAdd isEqualToPoint:clickedPoint]) {
+                dotsToAddInARow++;
+                nextPointToAdd = [self detectNextPointEqualByY:clickedPoint fromPoint:nextPointToAdd];
+                NSLog(@"%d %d", nextPointToAdd.x, nextPointToAdd.y);
+                if (!nextPointToAdd) {
+                    [self removePoint];
+                    [self addPoint:clickedPoint];
+                    NSLog(@"replacing first point");
+                    return;
+                }
+            }
+        }
     }
+    
+    if ([dotsFromCurrentChain count] > 1) {
+        IntegerPoint *firstPointInChain = [dotsFromCurrentChain firstObject];
+        IntegerPoint *lastPointInChain = [dotsFromCurrentChain lastObject];
+        IntegerPoint *nextPointToAdd = nil;
+        
+        if ([dotsFromCurrentChain count] == 2 && [clickedPoint isEqualToPoint:firstPointInChain]) {
+            [self removeCurrentChain:nil];
+            NSLog(@"chain is destroyed by clicking first point?");
+            return;
+        }
+        
+        if ([clickedPoint isEqualToPoint:firstPointInChain]) {
+            if (firstPointInChain.x == lastPointInChain.x) {
+                int dotsToAddInARow = 0;
+                nextPointToAdd = lastPointInChain;
+                while (![nextPointToAdd isEqualToPoint:clickedPoint]) {
+                    dotsToAddInARow++;
+                    nextPointToAdd = [self detectNextPointEqualByX:clickedPoint fromPoint:nextPointToAdd];
+                    NSLog(@"%d %d", nextPointToAdd.x, nextPointToAdd.y);
+                    if (!nextPointToAdd) {
+                        [self removeCurrentChain:nil];
+                        NSLog(@"chain is destroyed by clicking first point?");
+                        return;
+                    }
+                }
+            } else if (firstPointInChain.y == lastPointInChain.y) {
+                int dotsToAddInARow = 0;
+                nextPointToAdd = lastPointInChain;
+                while (![nextPointToAdd isEqualToPoint:clickedPoint]) {
+                    dotsToAddInARow++;
+                    nextPointToAdd = [self detectNextPointEqualByY:clickedPoint fromPoint:nextPointToAdd];
+                    NSLog(@"%d %d", nextPointToAdd.x, nextPointToAdd.y);
+                    if (!nextPointToAdd) {
+                        [self removeCurrentChain:nil];
+                        NSLog(@"chain is destroyed by clicking first point?");
+                        return;
+                    }
+                }
+            } else if (firstPointInChain.x != lastPointInChain.x && firstPointInChain.y && lastPointInChain) {
+                [self removeCurrentChain:nil];
+                NSLog(@"chain is destroyed by clicking first point?");
+                return;
+            }
+        }
+    }
+    
     
     
     if ([dotsFromCurrentChain count] != 0) {
@@ -558,7 +663,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     for (int i = 0; i < [pointsToBeRemoved count]; i++) {
         IntegerPoint *pointToMarkAsUnused = [pointsToBeRemoved objectAtIndex:i];
         //[buttons[pointToMarkAsUnused.x + pointToMarkAsUnused.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-        [buttons[pointToMarkAsUnused.x + pointToMarkAsUnused.y * FIELD_SIZE] setBackgroundColor:self.view.backgroundColor];
+        [buttons[pointToMarkAsUnused.x + pointToMarkAsUnused.y * FIELD_SIZE] setBackgroundColor:[UIColor lightGrayColor]];
     }
     
     if (prelastPointInChain) {
@@ -817,7 +922,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     for (int i = 0; i < [pointsToBeRemoved count]; i++) {
         IntegerPoint *pointToRemove = [pointsToBeRemoved objectAtIndex:i];
       //  [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor redColor]];
-        [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:self.view.backgroundColor];
+        [buttons[pointToRemove.x + pointToRemove.y * FIELD_SIZE] setBackgroundColor:[UIColor lightGrayColor]];
         
     }
     

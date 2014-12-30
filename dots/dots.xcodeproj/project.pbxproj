@@ -24,6 +24,8 @@
 		8486AB671A4ECB5700A5E506 /* Bonus.m in Sources */ = {isa = PBXBuildFile; fileRef = 8486AB661A4ECB5700A5E506 /* Bonus.m */; };
 		8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */; };
 		8B905E7F1A518D2700A815DE /* Main_iPhone.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8B905E7D1A518D2700A815DE /* Main_iPhone.storyboard */; };
+		8B9B9A491A530F6A00DF3445 /* DACircularProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B9B9A461A530F6A00DF3445 /* DACircularProgressView.m */; };
+		8B9B9A4A1A530F6A00DF3445 /* DALabeledCircularProgressView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B9B9A481A530F6A00DF3445 /* DALabeledCircularProgressView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +64,10 @@
 		8B18EB1A1A4A2D06002D274D /* IntegerPoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntegerPoint.h; sourceTree = "<group>"; };
 		8B18EB1B1A4A2D06002D274D /* IntegerPoint.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IntegerPoint.m; sourceTree = "<group>"; };
 		8B905E7E1A518D2700A815DE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = dots/Base.lproj/Main_iPhone.storyboard; sourceTree = "<group>"; };
+		8B9B9A451A530F6A00DF3445 /* DACircularProgressView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DACircularProgressView.h; sourceTree = "<group>"; };
+		8B9B9A461A530F6A00DF3445 /* DACircularProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DACircularProgressView.m; sourceTree = "<group>"; };
+		8B9B9A471A530F6A00DF3445 /* DALabeledCircularProgressView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DALabeledCircularProgressView.h; sourceTree = "<group>"; };
+		8B9B9A481A530F6A00DF3445 /* DALabeledCircularProgressView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DALabeledCircularProgressView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +188,7 @@
 		8486AB601A4A17C200A5E506 /* others */ = {
 			isa = PBXGroup;
 			children = (
+				8B9B9A441A530F6A00DF3445 /* DACircularProgress */,
 				8486AB411A4A071E00A5E506 /* Images.xcassets */,
 				8486AB2D1A4A071D00A5E506 /* Supporting Files */,
 				8486AB3B1A4A071E00A5E506 /* Main_iPad.storyboard */,
@@ -198,6 +205,17 @@
 				8486AB3F1A4A071E00A5E506 /* ViewController.m */,
 			);
 			name = viewController;
+			sourceTree = "<group>";
+		};
+		8B9B9A441A530F6A00DF3445 /* DACircularProgress */ = {
+			isa = PBXGroup;
+			children = (
+				8B9B9A451A530F6A00DF3445 /* DACircularProgressView.h */,
+				8B9B9A461A530F6A00DF3445 /* DACircularProgressView.m */,
+				8B9B9A471A530F6A00DF3445 /* DALabeledCircularProgressView.h */,
+				8B9B9A481A530F6A00DF3445 /* DALabeledCircularProgressView.m */,
+			);
+			path = DACircularProgress;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -299,8 +317,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				8486AB401A4A071E00A5E506 /* ViewController.m in Sources */,
+				8B9B9A491A530F6A00DF3445 /* DACircularProgressView.m in Sources */,
 				8B18EB1C1A4A2D06002D274D /* IntegerPoint.m in Sources */,
 				8486AB671A4ECB5700A5E506 /* Bonus.m in Sources */,
+				8B9B9A4A1A530F6A00DF3445 /* DALabeledCircularProgressView.m in Sources */,
 				8486AB371A4A071E00A5E506 /* AppDelegate.m in Sources */,
 				8486AB331A4A071D00A5E506 /* main.m in Sources */,
 			);
