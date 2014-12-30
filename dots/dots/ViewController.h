@@ -10,6 +10,18 @@
 
 @interface ViewController : UIViewController
 
+@property (weak, nonatomic) IBOutlet UILabel *scoreLbl;
+@property (weak, nonatomic) IBOutlet UIButton *removeAllChainButton;
+@property (weak, nonatomic) IBOutlet UIView *gameOverView;
+@property (weak, nonatomic) IBOutlet UIView *backgroundGameOverView;
+@property (weak, nonatomic) IBOutlet UILabel *gameOverScoreLbl;
+
+- (IBAction)backToMenuButtonTapped:(id)sender;
+
+- (IBAction)retryButtonPressed:(id)sender;
+
+- (IBAction)removeCurrentChain:(id)sender;
+
 - (IntegerPoint *)getRandomPoint;
 
 @end
