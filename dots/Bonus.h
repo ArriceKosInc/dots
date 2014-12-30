@@ -22,6 +22,10 @@ typedef enum {
 @property (nonatomic, readwrite) BonusType bonusType;
 @property (nonatomic, readwrite) int effectDuration;
 @property (nonatomic, readwrite) int lifeTime;
+@property (nonatomic, readwrite) int bonusId;
+
++ (int) bonusCount;
++ (void) setBonusCount:(int)val;
 
 - (BOOL) isEqualToBonus:(Bonus *) bonus;
 - (NSString *) toString;

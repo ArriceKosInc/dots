@@ -28,6 +28,9 @@ NSMutableArray *bonuses;
 NSMutableArray *bonusImages;
 NSMutableArray *activatedBonusImages;
 NSMutableArray *activatedBonuses;
+NSMutableArray *bonusProgressViews;
+NSMutableArray *bonusRemainingTicks;
+NSMutableArray *bonusTimers;
 NSTimer *timer1;
 NSTimer *timer2;
 
@@ -64,6 +67,9 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     bonusImages = [NSMutableArray new];
     activatedBonusImages = [NSMutableArray new];
     activatedBonuses = [NSMutableArray new];
+    bonusProgressViews = [NSMutableArray new];
+    bonusRemainingTicks = [NSMutableArray new];
+    bonusTimers = [NSMutableArray new];
     
     score = SCORE_INITIAL;
     difficulty = 1;
@@ -135,32 +141,17 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         [barrierImages[i + [horizontalBarriers count]] setBackgroundColor:[UIColor blueColor]];
         [self.view addSubview:barrierImages[i + [horizontalBarriers count]]];
     }
-    
-    NSLog(@"%lu",(unsigned long)[rawBarriers count]);
-    for (int i = 0; i < [verticalBarriers count]; i++) {
-        IntegerPoint *vertbar = [verticalBarriers objectAtIndex:i];
-        NSLog(@"vert bar at: x = %ld, y = %ld", (long)vertbar.x, (long)vertbar.y);
-    }
-    for (int i = 0; i < [horizontalBarriers count]; i++) {
-        IntegerPoint *vertbar = [horizontalBarriers objectAtIndex:i];
-        NSLog(@"hor bar at: x = %ld, y = %ld", (long)vertbar.x, (long)vertbar.y);
-    }
 
-    
-//    [self addBonusToField];
-//    Bonus *bonus = [bonuses objectAtIndex:0];
-//    [self activateBonus:bonus];
-    
-	// Do any additional setup after loading the view, typically from a nib.
-    DACircularProgressView *progressView;
-    progressView = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 500.0f, 500.0f)];
-    progressView.roundedCorners = NO;
-    progressView.thicknessRatio = 1.0f;
-    progressView.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0];
-    progressView.progressTintColor = [UIColor colorWithWhite:1.0 alpha:0.5];
-    [self.view addSubview:progressView];
-    [self.view bringSubviewToFront:progressView];
-    progressView.progress = 0.6;
+  	// Do any additional setup after loading the view, typically from a nib.
+//    DACircularProgressView *progressView;
+//    progressView = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 500.0f, 500.0f)];
+//    progressView.roundedCorners = NO;
+//    progressView.thicknessRatio = 1.0f;
+//    progressView.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0];
+//    progressView.progressTintColor = [UIColor colorWithWhite:1.0 alpha:0.5];
+//    [self.view addSubview:progressView];
+//    [self.view bringSubviewToFront:progressView];
+//    progressView.progress = 0.6;
 }
 
 -(void)onTick:(NSTimer *)timer {
@@ -269,6 +260,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     IntegerPoint *ip = [self getRandomPoint];
     [allDots addObject:ip];
     [buttons[ip.x + ip.y * FIELD_SIZE] setTitle:@"x" forState:UIControlStateNormal];
+    //типа анимировать появление точки
 }
 
 - (void)addBonusToField:(NSTimer *)timer
@@ -340,7 +332,6 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             if (activate) {
                 [self activateBonus:bonus];
                 UILabel *image = [bonusImages objectAtIndex:i];
-                [bonusImages removeObjectAtIndex:i];
                 [activatedBonusImages addObject:image];
                 int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
                 CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
@@ -351,8 +342,34 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                                              image.frame.size.width,
                                              image.frame.size.height); // move to new location
                 }];
+                DACircularProgressView *progressView;
+                progressView = [[DACircularProgressView alloc] initWithFrame:CGRectMake(bonusStartPoint.x,
+                                                                                        bonusStartPoint.y + (cellWidth + 3) * [activatedBonusImages count],
+                                                                                        image.frame.size.width,
+                                                                                        image.frame.size.height)];
+                progressView.roundedCorners = NO;
+                progressView.thicknessRatio = 1.0f;
+                progressView.trackTintColor = [UIColor colorWithWhite:1.0 alpha:0];
+                progressView.progressTintColor = [UIColor colorWithWhite:1.0 alpha:0.5];
+                [self.view addSubview:progressView];
+                [self.view bringSubviewToFront:progressView];
+                progressView.progress = 0.0f;
+                [bonusProgressViews addObject:progressView];
+                [bonusRemainingTicks addObject:[NSNumber numberWithInt:(int)(bonus.effectDuration / BONUS_TIME_REFRESH_TICK)]];
+                NSLog(@"%d",(int)(bonus.effectDuration / BONUS_TIME_REFRESH_TICK));
+                [activatedBonuses addObject:bonus];
+                NSTimer *timer;
+                NSString *bonusInfo = [bonus toString];
+                timer = [NSTimer scheduledTimerWithTimeInterval:BONUS_TIME_REFRESH_TICK
+                                                 target:self
+                                               selector:@selector(bonusEffectAnimation:)
+                                               userInfo:bonusInfo
+                                                repeats:YES];
+                [bonusTimers addObject:timer];
             } else {
-                
+                //типа анимировать исчезновение бонуса
+                UILabel *image = [bonusImages objectAtIndex:i];
+                [image removeFromSuperview];
             }
             
 //            UILabel *image = [bonusImages objectAtIndex:i];
@@ -360,8 +377,56 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
 //            
 //            [bonusImages removeObjectAtIndex:i];
             [bonuses removeObjectAtIndex:i];    /////???????????????????????????????
-            [activatedBonuses addObject:bonus];
+            [bonusImages removeObjectAtIndex:i];
             return;
+        }
+    }
+}
+//сделать что-то с бонусом предела точек. придумать, как он будет отображаться, т.к. он единственный, который не имеет продолжительности
+-(void)bonusEffectAnimation:(NSTimer *) theTimer
+{
+    NSString *bonusInfo = (NSString *)[theTimer userInfo];
+    Bonus *bonus = [Bonus bonusFromString:bonusInfo];
+    for (int i = 0; i < [activatedBonuses count]; i++) {
+        Bonus *bon = [activatedBonuses objectAtIndex:i];
+        if ([bonus isEqualToBonus:bon]) {
+            DACircularProgressView *progressView = [bonusProgressViews objectAtIndex:i];
+            NSNumber *remainingTicks = [bonusRemainingTicks objectAtIndex:i];
+            remainingTicks = [NSNumber numberWithInt:[remainingTicks intValue] - 1];
+            [bonusRemainingTicks replaceObjectAtIndex:i withObject:remainingTicks];
+            progressView.progress += 1. / bonus.effectDuration * BONUS_TIME_REFRESH_TICK;
+            if ([remainingTicks intValue] == 0) {   //типа тоже добавить анимацию исчезновения бонуса итд
+                NSLog(@"bonusu privet + %@", [bonus toString]);
+                NSTimer *timer = [bonusTimers objectAtIndex:i];
+                [timer invalidate];
+                [progressView removeFromSuperview];
+                UILabel *label = [activatedBonusImages objectAtIndex:i];
+                [label removeFromSuperview];
+                [activatedBonuses removeObjectAtIndex:i];
+                [activatedBonusImages removeObjectAtIndex:i];
+                [bonusProgressViews removeObjectAtIndex:i];
+                [bonusRemainingTicks removeObjectAtIndex:i];
+                [bonusTimers removeObjectAtIndex:i];
+                
+                int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
+                CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
+                                                      [[UIScreen mainScreen] bounds].size.height * 1 / 17);
+                for (int k = 0; k < [activatedBonusImages count]; k++) {
+                    UILabel *activatedBonusImage = [activatedBonusImages objectAtIndex:k];
+                    DACircularProgressView *progressView = [bonusProgressViews objectAtIndex:k];
+                    
+                    [UIView animateWithDuration:0.3 animations:^{
+                        activatedBonusImage.frame = CGRectMake(bonusStartPoint.x,
+                                                 activatedBonusImage.frame.origin.y - (cellWidth + 3),
+                                                 activatedBonusImage.frame.size.width,
+                                                 activatedBonusImage.frame.size.height);
+                        progressView.frame = CGRectMake(bonusStartPoint.x,
+                                                               progressView.frame.origin.y - (cellWidth + 3),
+                                                               progressView.frame.size.width,
+                                                               progressView.frame.size.height);
+                    }];
+                }
+            }
         }
     }
 }

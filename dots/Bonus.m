@@ -10,6 +10,17 @@
 
 @implementation Bonus
 
+static int bonusCount = 0;
++ (int) bonusCount
+{
+    @synchronized(self) { return bonusCount; }
+}
++ (void) setBonusCount:(int)val
+{
+    @synchronized(self) { bonusCount = val; }
+}
+
+
 - (id) init
 {
     self = [super init];
@@ -19,14 +30,15 @@
         self.bonusType = BonusTypeScoreModifier;
         self.effectDuration = DEFAULT_BONUS_EFFECT_DURATION;
         self.lifeTime = DEFAULT_BONUS_LIFETIME;
+        bonusCount++;
+        self.bonusId = bonusCount;
     }
     return self;
 }
 
 - (BOOL) isEqualToBonus:(Bonus *) bonus
 {
-    if ([self.position isEqualToPoint:bonus.position] && self.bonusType == bonus.bonusType &&
-        self.effectDuration == bonus.effectDuration && self.lifeTime == bonus.lifeTime) {
+    if (self.bonusId == bonus.bonusId) {
         return YES;
     } else {
         return NO;
@@ -35,8 +47,8 @@
 
 - (NSString *) toString
 {
-    NSString *string = [NSString stringWithFormat:@"%d %d %d %d %d", self.position.x,
-                   self.position.y, self.bonusType, self.effectDuration, self.lifeTime];
+    NSString *string = [NSString stringWithFormat:@"%d %d %d %d %d %d", self.position.x,
+                   self.position.y, self.bonusType, self.effectDuration, self.lifeTime, self.bonusId];
     return string;
 }
 + (Bonus *) bonusFromString:(NSString *) string
@@ -52,11 +64,14 @@
     int effectDuration = [s_effectDuration intValue];
     NSString *s_lifeTime = [components objectAtIndex:4];
     int lifeTime = [s_lifeTime intValue];
+    NSString *s_bonusId = [components objectAtIndex:5];
+    int bonusId = [s_bonusId intValue];
     Bonus *bonus = [[Bonus alloc] init];
     bonus.position = [IntegerPoint integerPointWithX:x andY:y];
     bonus.bonusType = type;
     bonus.effectDuration = effectDuration;
     bonus.lifeTime = lifeTime;
+    bonus.bonusId = bonusId;
     return bonus;
 }
 
