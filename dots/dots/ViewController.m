@@ -107,6 +107,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                                                                 cellWidth - 1)];
 //        [buttons[i] setBackgroundColor:[UIColor redColor]];
         UIButton *button = buttons[i];
+        button.layer.masksToBounds = YES;
         button.layer.cornerRadius = button.bounds.size.width/2.0;
         [buttons[i] setBackgroundColor:[UIColor lightGrayColor]];
         [buttons[i] addTarget:self action:@selector(pressBtn:) forControlEvents:UIControlEventTouchUpInside];
@@ -401,31 +402,52 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                 [timer invalidate];
                 [progressView removeFromSuperview];
                 UILabel *label = [activatedBonusImages objectAtIndex:i];
-                [label removeFromSuperview];
+//                [label removeFromSuperview];
                 [activatedBonuses removeObjectAtIndex:i];
-                [activatedBonusImages removeObjectAtIndex:i];
-                [bonusProgressViews removeObjectAtIndex:i];
+//                [activatedBonusImages removeObjectAtIndex:i];
+                
                 [bonusRemainingTicks removeObjectAtIndex:i];
                 [bonusTimers removeObjectAtIndex:i];
-                
-                int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
-                CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
-                                                      [[UIScreen mainScreen] bounds].size.height * 1 / 17);
-                for (int k = 0; k < [activatedBonusImages count]; k++) {
-                    UILabel *activatedBonusImage = [activatedBonusImages objectAtIndex:k];
-                    DACircularProgressView *progressView = [bonusProgressViews objectAtIndex:k];
+                [UIView animateWithDuration:0.5 animations:^{
                     
-                    [UIView animateWithDuration:0.3 animations:^{
-                        activatedBonusImage.frame = CGRectMake(bonusStartPoint.x,
-                                                 activatedBonusImage.frame.origin.y - (cellWidth + 3),
-                                                 activatedBonusImage.frame.size.width,
-                                                 activatedBonusImage.frame.size.height);
-                        progressView.frame = CGRectMake(bonusStartPoint.x,
-                                                               progressView.frame.origin.y - (cellWidth + 3),
-                                                               progressView.frame.size.width,
-                                                               progressView.frame.size.height);
-                    }];
+                    label.transform = CGAffineTransformScale(label.transform,
+                                                             0.00001,
+                                                             0.00001);
+                    
+                }completion:^(BOOL finished) {
+                    if(finished){
+                        NSLog(@"finished removing bonus");
+//                        [label removeFromSuperview];
+//                        [activatedBonusImages removeObject:label];
+                        int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
+                        CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
+                                                              [[UIScreen mainScreen] bounds].size.height * 1 / 17);
+                        for (int k = 0; k < [activatedBonusImages count]; k++) {
+                            UILabel *activatedBonusImage = [activatedBonusImages objectAtIndex:k];
+                            DACircularProgressView *progressView = [bonusProgressViews objectAtIndex:k];
+                            
+                            [UIView animateWithDuration:0.3 animations:^{
+                                activatedBonusImage.frame = CGRectMake(bonusStartPoint.x,
+                                                                       activatedBonusImage.frame.origin.y - (cellWidth + 3),
+                                                                       activatedBonusImage.frame.size.width,
+                                                                       activatedBonusImage.frame.size.height);
+                                progressView.frame = CGRectMake(bonusStartPoint.x,
+                                                                progressView.frame.origin.y - (cellWidth + 3),
+                                                                progressView.frame.size.width,
+                                                                progressView.frame.size.height);
+                            }completion:^(BOOL finished) {
+                                if (finished) {
+                                    [label removeFromSuperview];
+//                                    [activatedBonusImages removeObject:label];
+//                                    [bonusProgressViews removeObjectAtIndex:i];
+                                }
+                            }];
+                        }
+                    }
                 }
+                 ];
+                
+                
             }
         }
     }
@@ -1327,6 +1349,22 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             [image setBackgroundColor:[UIColor orangeColor]];
         }
     }
+}
+- (void) animatedCircleRemove:(UILabel *) image
+{ [UIView animateWithDuration:0.5 animations:^{
+
+       image.transform = CGAffineTransformScale(image.transform,
+                                                0.00001,
+                                                .00001);
+    
+    }completion:^(BOOL finished) {
+        if(finished){
+            NSLog(@"finished removing bonus");
+            [image removeFromSuperview];
+            [activatedBonusImages removeObject:image];
+        }
+}
+   ];
 }
 
 @end
