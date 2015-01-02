@@ -277,16 +277,24 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
     CGPoint buttonStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 4 / 22,
                                            [[UIScreen mainScreen] bounds].size.height * 1.5 / 17);
     
-    UILabel *bonusLabel = [[UILabel alloc] initWithFrame:CGRectMake(buttonStartPoint.x + ip.x * (cellWidth + 3),
-                                                                 buttonStartPoint.y + ip.y  * (cellWidth + 3),
-                                                                 cellWidth - 1,
-                                                                 cellWidth - 1)];
+//    UILabel *bonusLabel = [[UILabel alloc] initWithFrame:CGRectMake(buttonStartPoint.x + ip.x * (cellWidth + 3),
+//                                                                 buttonStartPoint.y + ip.y  * (cellWidth + 3),
+//                                                                 cellWidth - 1,
+//                                                                 cellWidth - 1)];
 //    bonusLabel.layer.cornerRadius = bonusLabel.bounds.size.width/2.0;
+    
+    UILabel *bonusLabel = [[UILabel alloc] initWithFrame:CGRectMake(buttonStartPoint.x + (cellWidth - 1) / 2 + ip.x * (cellWidth + 3),
+                                                                    buttonStartPoint.y + (cellWidth - 1) / 2 + ip.y * (cellWidth + 3),
+                                                                    1,
+                                                                    1)];
+//    bonusLabel.layer.masksToBounds = YES;
+//    [bonusLabel.layer setCornerRadius:bonusLabel.bounds.size.width/2.0];
+    [bonusLabel setBackgroundColor:[UIColor greenColor]];
     bonusLabel.layer.masksToBounds = YES;
     [bonusLabel.layer setCornerRadius:bonusLabel.bounds.size.width/2.0];
-    [bonusLabel setBackgroundColor:[UIColor greenColor]];
-    [bonusLabel setTextAlignment:NSTextAlignmentCenter];
+    [self.view addSubview:bonusLabel];
     [self.view bringSubviewToFront:bonusLabel];
+    [bonusLabel setTextAlignment:NSTextAlignmentCenter];
     switch (bonus.bonusType) {
         case BonusTypeIgnoreBarriers:
             [bonusLabel setText:@"I"];
@@ -294,7 +302,7 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         case BonusTypeScoreModifier:
             [bonusLabel setText:@"S"];
             break;
-        //case BonusTypeAdditionalPoint:
+            //case BonusTypeAdditionalPoint:
         case BonusTypeDotLimit:
             [bonusLabel setText:@"D"];
             break;
@@ -304,9 +312,18 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
         default: [NSException raise:@"bonus_type_exception" format:@"invalid bonus type"];
             break;
     }
-    
-    
-    [self.view addSubview:bonusLabel];
+            [UIView animateWithDuration:0.5 animations:^{
+                bonusLabel.bounds = CGRectMake(buttonStartPoint.x + ip.x * (cellWidth + 3),
+                                               buttonStartPoint.y + ip.y  * (cellWidth + 3),
+                                               cellWidth - 1,
+                                               cellWidth - 1);
+                bonusLabel.layer.masksToBounds = YES;
+                [bonusLabel.layer setCornerRadius:bonusLabel.bounds.size.width/2.0];
+                
+            } completion:^(BOOL finished1) {
+                if (finished1) {
+                }
+            }];
     [bonusImages addObject:bonusLabel];
     
     NSString *bonusInfo = [bonus toString];
@@ -370,7 +387,17 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
             } else {
                 //типа анимировать исчезновение бонуса
                 UILabel *image = [bonusImages objectAtIndex:i];
-                [image removeFromSuperview];
+                [UIView animateWithDuration:0.5 animations:^{
+                    
+                    image.transform = CGAffineTransformScale(image.transform,
+                                                             0.00001,
+                                                             0.00001);
+                    
+                }completion:^(BOOL finished) {
+                    if (finished) {
+                        [image removeFromSuperview];
+                    }
+                }];
             }
             
 //            UILabel *image = [bonusImages objectAtIndex:i];
@@ -400,52 +427,51 @@ BOOL visited[FIELD_SIZE * FIELD_SIZE];
                 NSLog(@"bonusu privet + %@", [bonus toString]);
                 NSTimer *timer = [bonusTimers objectAtIndex:i];
                 [timer invalidate];
-                [progressView removeFromSuperview];
+                timer = nil;
                 UILabel *label = [activatedBonusImages objectAtIndex:i];
-//                [label removeFromSuperview];
                 [activatedBonuses removeObjectAtIndex:i];
-//                [activatedBonusImages removeObjectAtIndex:i];
-                
                 [bonusRemainingTicks removeObjectAtIndex:i];
                 [bonusTimers removeObjectAtIndex:i];
-                [UIView animateWithDuration:0.5 animations:^{
+                [activatedBonusImages removeObject:label];
+                [bonusProgressViews removeObjectAtIndex:i];
+                [progressView removeFromSuperview];
+                
+                int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
+                CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
+                                                      [[UIScreen mainScreen] bounds].size.height * 1 / 17);
+                for (int k = 0; k < [activatedBonusImages count]; k++) {
+                    NSLog(@"k = %d", k);
+                    UILabel *activatedBonusImage = [activatedBonusImages objectAtIndex:k];
+                    DACircularProgressView *progressView1 = [bonusProgressViews objectAtIndex:k];
                     
+                    [UIView animateWithDuration:0.3 animations:^{
+                        activatedBonusImage.frame = CGRectMake(bonusStartPoint.x,
+                                                               activatedBonusImage.frame.origin.y - (cellWidth + 3),
+                                                               activatedBonusImage.frame.size.width,
+                                                               activatedBonusImage.frame.size.height);
+                        progressView1.frame = CGRectMake(bonusStartPoint.x,
+                                                         progressView1.frame.origin.y - (cellWidth + 3),
+                                                         progressView1.frame.size.width,
+                                                         progressView1.frame.size.height);
+                    }completion:^(BOOL finished1) {
+                        if (finished1) {
+                            NSLog(@"emmmmm");
+                        }
+                    }];
+                }
+                [UIView animateWithDuration:0.5 animations:^{
+                    NSLog(@"starting removing bonus");
                     label.transform = CGAffineTransformScale(label.transform,
                                                              0.00001,
                                                              0.00001);
-                    
+                    label.frame = CGRectMake(bonusStartPoint.x,
+                                             label.frame.origin.y - (cellWidth + 3),
+                                             label.frame.size.width,
+                                             label.frame.size.height);
                 }completion:^(BOOL finished) {
-                    if(finished){
                         NSLog(@"finished removing bonus");
-//                        [label removeFromSuperview];
-//                        [activatedBonusImages removeObject:label];
-                        int cellWidth = [[UIScreen mainScreen] bounds].size.height / 17;
-                        CGPoint bonusStartPoint = CGPointMake([[UIScreen mainScreen] bounds].size.width * 27 / 22,
-                                                              [[UIScreen mainScreen] bounds].size.height * 1 / 17);
-                        for (int k = 0; k < [activatedBonusImages count]; k++) {
-                            UILabel *activatedBonusImage = [activatedBonusImages objectAtIndex:k];
-                            DACircularProgressView *progressView = [bonusProgressViews objectAtIndex:k];
-                            
-                            [UIView animateWithDuration:0.3 animations:^{
-                                activatedBonusImage.frame = CGRectMake(bonusStartPoint.x,
-                                                                       activatedBonusImage.frame.origin.y - (cellWidth + 3),
-                                                                       activatedBonusImage.frame.size.width,
-                                                                       activatedBonusImage.frame.size.height);
-                                progressView.frame = CGRectMake(bonusStartPoint.x,
-                                                                progressView.frame.origin.y - (cellWidth + 3),
-                                                                progressView.frame.size.width,
-                                                                progressView.frame.size.height);
-                            }completion:^(BOOL finished) {
-                                if (finished) {
-                                    [label removeFromSuperview];
-//                                    [activatedBonusImages removeObject:label];
-//                                    [bonusProgressViews removeObjectAtIndex:i];
-                                }
-                            }];
-                        }
-                    }
-                }
-                 ];
+                        [label removeFromSuperview];
+                }];
                 
                 
             }
